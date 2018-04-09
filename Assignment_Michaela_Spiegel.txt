@@ -336,30 +336,192 @@ Key:
 
 Part 2: Inferences and Analysis
 
-1. Pick one city and category of your choice and group the businesses in that city or category by their overall star rating. Compare the businesses with 2-3 stars to the businesses with 4-5 stars and answer the following questions. Include your code.
+1. Pick one city and category of your choice and group the businesses in that city or category by their overall star rating. 
+Compare the businesses with 2-3 stars to the businesses with 4-5 stars and answer the following questions. Include your code.
 	
+	city = Toronto, no category chosen to less data for analysis!
+
 i. Do the two groups you chose to analyze have a different distribution of hours?
 
+I studied the whole number of open hours per week.
+
++----------------------------+-------+-------+------------+
+| name                       | class | stars | sum(hours) |
++----------------------------+-------+-------+------------+
+| Good Gosh Beauty           | upper |   4.5 |       20.0 |
+| Edulis                     | upper |   4.0 |         24 |
+| Gussied Up                 | upper |   4.5 |         42 |
+| Innercity MMA              | upper |   5.0 |         43 |
+| Halo Brewery               | upper |   4.0 |         44 |
+| Toronto Acupuncture Studio | upper |   4.5 |         48 |
+| The Charlotte Room         | lower |   3.5 |         59 |
+| Cabin Fever                | upper |   4.5 |         62 |
+| Big Smoke Burger           | lower |   3.0 |       71.0 |
+| Sushi Osaka                | upper |   4.5 |         81 |
+| 99 Cent Sushi              | lower |   2.0 |         84 |
+| Loblaws                    | lower |   2.5 |         98 |
+| The Gym at 99 Sudbury      | lower |   3.0 |        101 |
+| Pizzaiolo                  | lower |   3.0 |        106 |
+| The Fox & Fiddle           | lower |   2.5 |        107 |
++----------------------------+-------+-------+------------+
+
+Upper class businesses are open very less hours per week compared to lower class businesses.
+
+
+I only analyse Sundays.
 
 ii. Do the two groups you chose to analyze have a different number of reviews?
-         
+
+	+-------+---------------+-------+
+	| total |       average | class |
+	+-------+---------------+-------+
+	| 13992 |     27.328125 | lower |
+	|  9951 | 22.6674259681 | upper |
++-------+---------------+-------+     
+
+Yes, total number of reviews for lower class is higher 
+and also the average number of review per low class business is higher than for upper class business.
          
 iii. Are you able to infer anything from the location data provided between these two groups? Explain.
 
+	+-------------+------------------+
+	| count_upper | neighborhood     |
+	+-------------+------------------+
+	|           7 | Brockton Village |
+	|           5 | Chinatown        |
+	|           3 | East York        |
+	|           7 | Etobicoke        |
+	|           7 | High Park        |
+	|           5 | Niagara          |
+	|           6 | The Annex        |
+	|           6 | Wallace Emerson  |
+	+-------------+------------------+
+	+-------------+------------------------+
+	| count_lower | neighborhood           |
+	+-------------+------------------------+
+	|           7 |                        |
+	|          14 | Downtown Core          |
+	|          13 | Entertainment District |
+	|           7 | Greektown              |
+	|           7 | Roncesvalles           |
+	+-------------+------------------------+
+
+Yes it is possible, since the lower and upper class businesses are located in very different neighbourhoods.
+
 SQL code used for analysis:
 
-		
+select name, class, stars, sum(hours)
+from
+(select name, stars,
+case
+when stars in (2.0, 2.5, 3.0, 3.5) then 'lower'
+else 'upper' end as class,
+hours as time, SUBSTR(hours,1,3) as day,
+case when hours like '%11:00-23:00' then '12'
+when hours like '%8:00-22:00' then '14'
+when hours like '%11:00-2:00' then '15'
+when hours like '%10:00-2:00' then '16'
+when hours like '%10:30-21:00' then '10.5'
+when hours like '%11:00-19:00' then '8'
+when hours like '%9:00-4:00' then '19'
+when hours like '%6:00-22:00' then '16'
+when hours like '%8:00-20:00' then '12'
+when hours like '%10:00-23:00' then '13'
+when hours like '%10:00-4:00' then '18'
+when hours like '%9:00-23:00' then '14'
+when hours like '%15:00-1:00' then '10'
+when hours like '%16:00-2:00' then '10'
+when hours like '%9:00-19:00' then '10'
+when hours like '%11:30-18:00' then '6.5'
+when hours like '%17:00-22:00' then '5'
+when hours like '%15:00-21:00' then '6'
+when hours like '%18:00-2:00' then '8'
+when hours like '%18:00-23:00' then '5'
+when hours like '%14:00-19:00' then '5'
+when hours like '%6:00-21:00' then '15'
+when hours like '%15:00-2:00' then '11'
+when hours like '%11:00-21:00' then '10'
+when hours like '%11:00-17:00' then '6'
+when hours like '%10:00-14:00' then '4'
+when hours like '%10:00-17:00' then '7'
+when hours like '%8:00-18:00' then '10'
+when hours like '%12:00-16:00' then '4'
+when hours like '%14:00-23:00' then '9'
+end as hours
+from
+(select  business.name, business.city, business.stars, hours.hours
+from hours
+join business
+on business.id = hours.business_id
+where business.city = 'Toronto' and stars > 1.5
+order by stars)
+order by hours asc)
+group by name
+order by sum(hours)
+
+select sum(review_count) as total, avg(review_count) as average , class from
+(select name, stars,
+review_count, neighborhood, address,
+case
+when stars in (2.0,2.5,3.0,3.5) then 'lower'
+else 'upper' end as class
+from
+(select name, stars,
+review_count, neighborhood, address
+from business
+where city='Toronto'
+and stars >1.5
+order by stars))
+group by class
+
+select count(neighborhood) as 'count_upper', neighborhood
+from
+(select name, review_count, neighborhood, address,
+case
+when stars in (2.0, 2.5, 3.0, 3.5) then 'lower'
+else 'upper' end as class
+from
+(select name, stars,
+review_count, neighborhood, address
+from business
+where city='Toronto'
+and stars >1.5
+order by stars))
+where class = "upper"
+group by neighborhood
 		
 2. Group business based on the ones that are open and the ones that are closed. What differences can you find between the ones that are still open and the ones that are closed? List at least two differences and the SQL code you used to arrive at your answer.
 		
+
 i. Difference 1:
-         
-         
+
+	+---------------+---------+
+	|    avg(stars) | is_open |
+	+---------------+---------+
+	| 3.67900943396 |       1 |
+	| 3.52039473684 |       0 |
+	+---------------+---------+
+			
 ii. Difference 2:
          
-         
+	+-------------------+---------+
+	| avg(review_count) | is_open |
+	+-------------------+---------+
+	|     23.1980263158 |       0 |
+	|     31.7570754717 |       1 |
+	+-------------------+---------+  
          
 SQL code used for analysis:
+
+	select avg(stars), is_open
+	from business
+	group by is_open
+	order by state
+
+	select avg(review_count), is_open
+	from business
+	group by is_open
+	order by review_count
 
 	
 	
@@ -369,13 +531,29 @@ Ideas for analysis include: Parsing out keywords and business attributes for sen
 	
 i. Indicate the type of analysis you chose to do:
          
+	I want to analyse if it is possible to predict wether a review is useful, funny or cool by NLP techniques. Maybe this depends not only on the text itself, but also on the popularity/coolness of the user. 		 
          
 ii. Write 1-2 brief paragraphs on the type of data you will need for your analysis and why you chose that data:
-                           
+
+	Therefore I would study this first and chose one business category e.g. bars (from business table), the review text, useful, funny, cool  evaluation (from review table) and then the belonging user information.                       
                   
 iii. Output of your finished dataset:
-         
+     
+	 +--------+-------+------+------+---------------+--------------+---------------+--------------+-------------+--------+
+| useful | funny | cool | fans | average_stars | stars_review | useful_review | funny_review | cool_review | review |
++--------+-------+------+------+---------------+--------------+---------------+--------------+-------------+--------+
++--------+-------+------+------+---------------+--------------+---------------+--------------+-------------+--------+
+(Zero rows)   
          
 iv. Provide the SQL code you used to create your final dataset:
 
-
+(for real database 1st and 3rd join -> left join, 2nd join -> right join)
+select user.useful, user.funny, user.cool, user.fans, user.average_stars, review.stars as stars_review, review.useful as useful_review, review.funny as funny_review, review.cool as cool_review, review.text as review
+from review 
+join user
+on review.user_id = user.id
+join business 
+on business.id = review.business_id
+join category 
+on category.business_id = business.id
+where category = 'Bars'
